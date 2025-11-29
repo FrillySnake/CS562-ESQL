@@ -8,7 +8,7 @@ def main():
     file (e.g. _generated.py) and then run.
     """
 
-    # Receive Phi operands
+    # Receive Phi operands (assumes that all lists are comma-separated)
     # stores phi operands
     phi = {
         "S": [], # list of all projected attributes and aggregates in SELECT
@@ -25,10 +25,10 @@ def main():
         # ask user for phi operands
         S = input("List all select attributes: ")
         n = input("Number of grouping variables: ")
-        V = input("List all grouping attributes")
+        V = input("List all grouping attributes: ")
         F = input("List all aggregates: ")
         sigma = input("List grouping variable predicates: ")
-        G = input("List predicate for output of GROUP BY: ")
+        G = input("List predicates for output of GROUP BY: ")
     elif len(sys.argv) == 2:
         # read phi operands from file that the user provided
         with open(f"{sys.argv[1]}", "r") as file:
@@ -37,6 +37,7 @@ def main():
 
             n = file.readline().strip()
             n = n.split(": ")[-1]
+            n = int(n)
 
             V = file.readline().strip()
             V = V.split(": ")[-1]
@@ -55,8 +56,18 @@ def main():
     
     # print(f"S: {S}\nn: {n}\nV: {V}\nF: {F}\nsigma: {sigma}\nG: {G}")
     
-    # phi["S"] = S.split(":")[]
-
+    phi["S"] = S.split(", ")
+    phi["n"] = n
+    phi["V"] = V.split(", ")
+    phi["F"] = [[]] * (n + 1) # create an empty list to store aggregates for each of the n grouping variables +1 list for the aggregates for the standard SQL groups which would be at index 0
+    F = F.split(", ")
+    # iterate through each aggregate and add them to the list associated with the matching grouping variable
+    for agg in F:
+        idx = int(agg[0]) # compute what grouping variable the current aggregate is for (idx = 0 are the standard SQL groups)
+        phi["F"][idx] = phi["F"][idx] + [agg]
+    phi["sigma"] = sigma.split(", ") # initialize with an empty list for each grouping variable
+    phi["G"] = G 
+    
 
     body = """
     for row in cur:
