@@ -47,6 +47,39 @@ def add(cur: dict, struct: dict, attrs: list, aggs: list):
     struct[key] = value
 
 
+
+def output(struct: dict, attrs: list):
+    """
+    Print the rows of a given mf_struct.
+    mf_struct's keys are the grouping attribute values themselves. Thus, we convert the keys into a dictionary where the key is the attribute's name (in attrs) and the value is the attribute's value (i.e. mf_struct key). Since the mf_struct's values are dictionaries that store the aggregates, we can combine the two dictionaries to produce a row of the mf_struct consisting of the grouping attributes and the aggregates.
+
+    Example:
+
+    For each mf_struct key-value pair -> 
+    ("Sam") : {
+         "1_sum_quant" : 10,
+         "2_avg_quant" : 20,
+    }
+
+    Convert into a dictionary ->
+    {"cust": "Sam", "1_sum_quant" : 10, "2_avg_quant" : 20}
+
+    :param struct: The mf_struct we want to print.
+    :param attrs: List of grouping attributes names.
+    """
+    
+
+    ret = [] # stores rows of mf_struct
+    for keys in struct.keys():
+        d = {}
+        for key, attr in zip(keys, attrs):
+            d[attr] = key
+    # combine dictionary of keys with the keys' dictionary 
+    d.update(struct.get(keys))
+    ret.append(d)    
+    print(tabulate.tabulate(ret, headers="keys", tablefmt="psql"))
+    
+
 def query():
     load_dotenv() # reads the .env file
 
@@ -66,17 +99,16 @@ def query():
     }
     
     num_rows = 1 # keeps track of how many rows the mf_struct has
-    # 
+    
     for row in cur:
-        lookup(row, mf_struct, ['cust', 'prod'])
+    #     lookup(row, mf_struct, ['cust', 'prod'])
         add(row, mf_struct, ['cust', 'prod'], ['1_sum_quant', '1_avg_quant', '2_sum_quant', '3_sum_quant', '3_avg_quant'])
-        # exit()
+        break
+
+    output(mf_struct, ['cust', 'prod'])
+    # print(mf_struct)
     
-    
-    
-    for row in cur:
-        _global.append(cur)
-        # exit()
+
     
     return tabulate.tabulate(_global,
                         headers="keys", tablefmt="psql") # returns data as a table
