@@ -72,13 +72,7 @@ def main():
     # print(f"S: {S}\nn: {n}\nV: {V}\nF: {F}\nsigma: {sigma}\nG: {G}")
 
     # TODO generate the code to create the H table
-    # mf_struct must have a column for each grouping attribute and aggregate
-
-    mf_struct = """
-    mf_struct = {
-        
-    }
-    """
+    mf_struct = "mf_struct = {}"
     
 
     # Define helper functions
@@ -123,7 +117,7 @@ def add(cur: dict, struct: dict, attrs: list, aggs: list):
     struct[key] = value
 
 """
-
+    
     output = """
 def output(struct: dict, attrs: list):
     \"""
@@ -157,7 +151,7 @@ def output(struct: dict, attrs: list):
 
     
     update = """
-def update(row: dict, struct: dict, attrs: list, aggs: list, preds: list):
+def update(row: dict, struct: dict, attrs: list, aggs: list, cond: str):
     \"""
     Updates the rows in mf_struct that are related to the given row.
 
@@ -173,10 +167,20 @@ def update(row: dict, struct: dict, attrs: list, aggs: list, preds: list):
     key = ()
     for attr in attrs:
         key += (row[attr],)
+    row["state"]="NY"
+    row["quant"] = 100
+    print(f"Condition: {cond}")
+    if eval(cond):
+        print("Success!")
+        exit()
+    else:
+        print("Failure")
+        exit()
         
+
     # iterate through mf_struct to identify rows that satisfy grouping variable's range w.r.t the given row
     # entry = struct.get(key)
-
+    
     """
     # TODO generate the code that implements the evaluation algorithm
     # perform n + 1 scans
@@ -204,7 +208,7 @@ def update(row: dict, struct: dict, attrs: list, aggs: list, preds: list):
                 exists = lookup(row, mf_struct, {phi["V"]})
                 if not exists:
                     add(row, mf_struct, {phi["V"]}, {F})
-            # update(row, mf_struct, {phi["V"]}, {phi["F"]}[i], {phi["sigma"]}[i]) # update the corresponding rows in mf_struct (n=0 refers to aggregates over the standard SQL groups)
+            update(row, mf_struct, {phi["V"]}, {phi["F"]}[i], {conds}[i]) # update the corresponding rows in mf_struct (n=0 refers to aggregates over the standard SQL groups)
 
     output(mf_struct, {phi["V"]})
     print(f"Entries: {{len(mf_struct.keys())}}")
@@ -234,7 +238,7 @@ from dotenv import load_dotenv
 {lookup}
 {add}
 {output}
-# {update}
+{update}
 def query():
     load_dotenv() # reads the .env file
 

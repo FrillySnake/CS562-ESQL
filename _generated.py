@@ -79,8 +79,8 @@ def output(struct: dict, attrs: list):
         ret.append(d) # add it to the list of rows  
     print(tabulate.tabulate(ret, headers="keys", tablefmt="psql")) # print the final table
     
-# 
-def update(row: dict, struct: dict, attrs: list, aggs: list, preds: list):
+
+def update(row: dict, struct: dict, attrs: list, aggs: list, cond: str):
     """
     Updates the rows in mf_struct that are related to the given row.
 
@@ -96,15 +96,19 @@ def update(row: dict, struct: dict, attrs: list, aggs: list, preds: list):
     key = ()
     for attr in attrs:
         key += (row[attr],)
-
-    
-
-
-
+    row["state"]="NY"
+    row["quant"] = 100
+    print(f"Condition: {cond}")
+    if eval(cond):
+        print("Success!")
+        exit()
+    else:
+        print("Failure")
+        exit()
         
+
     # iterate through mf_struct to identify rows that satisfy grouping variable's range w.r.t the given row
     # entry = struct.get(key)
-
     
     
 def query():
@@ -120,11 +124,7 @@ def query():
     cur.execute("SELECT * FROM sales") # prints all the rows in the data table
     
     _global = []
-    
-    mf_struct = {
-        
-    }
-    
+    mf_struct = {}
     
     table = cur.fetchall() # store the SQL query output into a list so that it can be scanned multiple times
     for i in range(4):
@@ -134,7 +134,7 @@ def query():
                 exists = lookup(row, mf_struct, ['cust', 'prod'])
                 if not exists:
                     add(row, mf_struct, ['cust', 'prod'], ['0_sum_quant', '1_sum_quant', '1_avg_quant', '2_sum_quant', '3_sum_quant', '3_avg_quant'])
-            # update(row, mf_struct, ['cust', 'prod'], [['0_sum_quant'], ['1_sum_quant', '1_avg_quant'], ['2_sum_quant'], ['3_sum_quant', '3_avg_quant']][i], ["1.state2='NY' and 1.quant<=100 or 1.quant>=20", "2.state='NJ'", "3.state='CT'"][i]) # update the corresponding rows in mf_struct (n=0 refers to aggregates over the standard SQL groups)
+            update(row, mf_struct, ['cust', 'prod'], [['0_sum_quant'], ['1_sum_quant', '1_avg_quant'], ['2_sum_quant'], ['3_sum_quant', '3_avg_quant']][i], ["row['state']=='NY' and row['quant']<=100 ", "row['state']=='NJ'", "row['state']=='CT'"][i]) # update the corresponding rows in mf_struct (n=0 refers to aggregates over the standard SQL groups)
 
     output(mf_struct, ['cust', 'prod'])
     print(f"Entries: {len(mf_struct.keys())}")
