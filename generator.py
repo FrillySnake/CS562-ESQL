@@ -1,5 +1,6 @@
 import subprocess
 import sys
+import re
 
 def main():
     """
@@ -65,7 +66,7 @@ def main():
     for agg in F:
         idx = int(agg[0]) # compute what grouping variable the current aggregate is for (idx = 0 are the standard SQL groups)
         phi["F"][idx] = phi["F"][idx] + [agg]
-    phi["sigma"] = sigma.split(", ") # initialize with an empty list for each grouping variable
+    phi["sigma"] = sigma.split(", ")
     phi["G"] = G 
     
     # print(f"S: {S}\nn: {n}\nV: {V}\nF: {F}\nsigma: {sigma}\nG: {G}")
@@ -153,18 +154,61 @@ def output(struct: dict, attrs: list):
         ret.append(d) # add it to the list of rows  
     print(tabulate.tabulate(ret, headers=\"keys\", tablefmt=\"psql\")) # print the final table
     """
+
     
+    update = """
+def update(row: dict, struct: dict, attrs: list, aggs: list, preds: list):
+    \"""
+    Updates the rows in mf_struct that are related to the given row.
+
+    :param row: Current row from the base table.
+    :param struct: The mf_struct that we're updating.
+    :param attrs: Grouping attributes that define the keys of mf_struct
+    :param aggs: Aggregates that are being computed for the grouping variable
+    :param preds: Predicates that define the grouping variable's range
+    \"""
+    # print(f"Pred: {preds}, Aggs: {aggs}, Attrs: {attrs}")
+    
+    # construct key that defines a grouping variable's range
+    key = ()
+    for attr in attrs:
+        key += (row[attr],)
+        
+    # iterate through mf_struct to identify rows that satisfy grouping variable's range w.r.t the given row
+    # entry = struct.get(key)
+
+    """
     # TODO generate the code that implements the evaluation algorithm
     # perform n + 1 scans
-    # scan 0 adds rows with distinct grouping attributes as well as computes any aggregates for the groups defined by the grouping attributes
+    
+    print(phi["sigma"])
+    conds = [] # stores the conditions from the transformed predicates
+    # convert each predicate into a condition for an if-block
+    for pred in phi["sigma"]:
+        # x.state="NY" -> row["state"] == "NY"
+        pred = re.sub(r"\d+\.(\w*)", r"row['\1']", pred) # encompass attribute with row[] where row is the variable for the current row  
+        # replace all occurrences of '=' with "==" \1 refers to capture group 1 (i.e. [^<|>])
+        pred = re.sub(r"([^<|>])=", r"\1==", pred) 
+        # print(f"Pred: {pred}")
+        conds.append(pred)    
+    
+    for cond in conds:
+        print(cond)    
 
     body = f"""
-    for row in cur:
-    #     lookup(row, mf_struct, {phi["V"]})
-        add(row, mf_struct, {phi["V"]}, {F})
-        # break
+    table = cur.fetchall() # store the SQL query output into a list so that it can be scanned multiple times
+    for i in range({n + 1}):
+        for row in table:
+            # scan 0 adds rows with distinct grouping attributes 
+            if i == 0:
+                exists = lookup(row, mf_struct, {phi["V"]})
+                if not exists:
+                    add(row, mf_struct, {phi["V"]}, {F})
+            # update(row, mf_struct, {phi["V"]}, {phi["F"]}[i], {phi["sigma"]}[i]) # update the corresponding rows in mf_struct (n=0 refers to aggregates over the standard SQL groups)
 
     output(mf_struct, {phi["V"]})
+    print(f"Entries: {{len(mf_struct.keys())}}")
+
     """
     
     # body = """
@@ -190,7 +234,7 @@ from dotenv import load_dotenv
 {lookup}
 {add}
 {output}
-
+# {update}
 def query():
     load_dotenv() # reads the .env file
 
@@ -205,7 +249,6 @@ def query():
     
     _global = []
     {mf_struct}
-    num_rows = 1 # keeps track of how many rows the mf_struct has
     {body}
 
     
