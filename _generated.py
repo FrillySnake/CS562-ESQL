@@ -91,11 +91,8 @@ def update(row: dict, struct: dict, attrs: list, aggs: list, cond: str):
     :param preds: Predicates that define the grouping variable's range
     """
     # print(f"Pred: {preds}, Aggs: {aggs}, Attrs: {attrs}")
-    
-    # construct key that defines a grouping variable's range
-    key = ()
-    for attr in attrs:
-        key += (row[attr],)
+
+    # TEST
     row["state"]="NY"
     row["quant"] = 100
     print(f"Condition: {cond}")
