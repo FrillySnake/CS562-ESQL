@@ -88,7 +88,7 @@ def update(row: dict, struct: dict, attrs: list, aggs: list, cond: str):
     :param struct: The mf_struct that we're updating.
     :param attrs: Grouping attributes that define the keys of mf_struct
     :param aggs: Aggregates that are being computed for the grouping variable
-    :param preds: Predicates that define the grouping variable's range
+    :param cond: Condition that define the grouping variable's range
     """
     # print(f"Pred: {preds}, Aggs: {aggs}, Attrs: {attrs}")
     
@@ -101,6 +101,19 @@ def update(row: dict, struct: dict, attrs: list, aggs: list, cond: str):
     print(f"Condition: {cond}")
     if eval(cond):
         print("Success!")
+        for agg in aggs:
+            (var, op, att) = agg.split("_")
+            match op:
+                case 'sum':
+                    struct[key][agg] += row[att]
+                case 'count':
+                    struct[key][agg] += 1
+                case 'max':
+                    struct[key][agg] = max(struct[key], row[att])
+                case 'min':
+                    struct[key][agg] = min(struct[key], row[att])
+                case 'avg':
+                    struct[key][agg] = 0
         exit()
     else:
         print("Failure")
@@ -134,7 +147,9 @@ def query():
                 exists = lookup(row, mf_struct, ['cust', 'prod'])
                 if not exists:
                     add(row, mf_struct, ['cust', 'prod'], ['0_sum_quant', '1_sum_quant', '1_avg_quant', '2_sum_quant', '3_sum_quant', '3_avg_quant'])
-            update(row, mf_struct, ['cust', 'prod'], [['0_sum_quant'], ['1_sum_quant', '1_avg_quant'], ['2_sum_quant'], ['3_sum_quant', '3_avg_quant']][i], ["row['state']=='NY' and row['quant']<=100 ", "row['state']=='NJ'", "row['state']=='CT'"][i]) # update the corresponding rows in mf_struct (n=0 refers to aggregates over the standard SQL groups)
+                update(row, mf_struct, ['cust', 'prod'], [['0_sum_quant'], ['1_sum_quant', '1_avg_quant'], ['2_sum_quant'], ['3_sum_quant', '3_avg_quant']][i], "True") # update the rows in mf_struct corresponding to i=0 (aggregates over the standard SQL groups)
+            else:
+                update(row, mf_struct, ['cust', 'prod'], [['0_sum_quant'], ['1_sum_quant', '1_avg_quant'], ['2_sum_quant'], ['3_sum_quant', '3_avg_quant']][i], ["row['state']=='NY' and row['quant']<=100 ", "row['state']=='NJ'", "row['state']=='CT'"][i-1]) # update the rows in mf_struct corresponding to i!=0 (aggregates over the grouping variables)             
 
     output(mf_struct, ['cust', 'prod'])
     print(f"Entries: {len(mf_struct.keys())}")
