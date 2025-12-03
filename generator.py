@@ -187,7 +187,6 @@ def update(row: dict, struct: dict, attrs: list, aggs: list, cond: str):
     key = () # create key with the given grouping attributes
     for attr in attrs:
         key += (row[attr],)
-    # print(key)
 
     # check if grouping variable condition is satisfied
     if eval(cond):
@@ -232,8 +231,7 @@ def update(row: dict, struct: dict, attrs: list, aggs: list, cond: str):
     # Convert HAVING clause predicate into an if condition
     pred_g = re.sub(r"(\d+_\w*)", r"value['\1']", phi["G"]) # encompass attributes with value[] where row is the value (dictionary) for the corresponding key  
     pred_g = re.sub(r"([^<|>])=", r"\1==", pred_g) # replace all occurrences of '=' with "==" \1 refers to capture group 1 (i.e. [^<|>])
-    print(pred_g)
-    # exit()
+
     
 
     body = f"""
@@ -249,8 +247,12 @@ def update(row: dict, struct: dict, attrs: list, aggs: list, cond: str):
             else:
                 update(row, mf_struct, {phi["V"]}, {phi["F"]}[i], {conds}[i-1]) # update the rows in mf_struct corresponding to i!=0 (aggregates over the grouping variables)             
 
-    output(mf_struct, {phi["V"]}) # check mf_struct output
     print(f"Total Rows: {{len(mf_struct.keys())}}")
+    output(mf_struct, {phi["V"]}) # check mf_struct output
+    
+    # Check if there's a predicate in G
+    if ({len(phi["G"])} == 0):
+        exit()
 
     # Apply predicate from HAVING clause
     # Iterate through rows of mf_struct
@@ -284,7 +286,6 @@ def update(row: dict, struct: dict, attrs: list, aggs: list, cond: str):
         d.update(value) # combine with dictionary of aggregates
         _global.append(d) # add to final list of rows
     """
-    
     
     # body = """
     # for row in cur:

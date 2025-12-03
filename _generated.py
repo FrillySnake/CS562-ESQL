@@ -110,7 +110,6 @@ def update(row: dict, struct: dict, attrs: list, aggs: list, cond: str):
     key = () # create key with the given grouping attributes
     for attr in attrs:
         key += (row[attr],)
-    # print(key)
 
     # check if grouping variable condition is satisfied
     if eval(cond):
@@ -155,34 +154,35 @@ def query():
     mf_struct = {}
     
     table = cur.fetchall() # store the SQL query output into a list so that it can be scanned multiple times
-    for i in range(4):
+    for i in range(3):
         for row in table:
             # scan 0 adds rows with distinct grouping attributes 
             if i == 0:
                 exists = lookup(row, mf_struct, ['cust', 'prod'])
                 if not exists:
-                    add(row, mf_struct, ['cust', 'prod'], ['0_sum_quant', '1_sum_quant', '1_avg_quant', '2_sum_quant', '3_avg_quant'])
-                update(row, mf_struct, ['cust', 'prod'], [['0_sum_quant'], ['1_sum_quant', '1_avg_quant'], ['2_sum_quant'], ['3_avg_quant']][i], "True") # update the rows in mf_struct corresponding to i=0 (aggregates over the standard SQL groups)
+                    add(row, mf_struct, ['cust', 'prod'], ['0_sum_quant', '1_sum_quant', '1_avg_quant', '2_sum_quant'])
+                update(row, mf_struct, ['cust', 'prod'], [['0_sum_quant'], ['1_sum_quant', '1_avg_quant'], ['2_sum_quant']][i], "True") # update the rows in mf_struct corresponding to i=0 (aggregates over the standard SQL groups)
             else:
-                update(row, mf_struct, ['cust', 'prod'], [['0_sum_quant'], ['1_sum_quant', '1_avg_quant'], ['2_sum_quant'], ['3_avg_quant']][i], ["row['state']=='NY' and row['quant']<=100 ", "row['state']=='NJ'", "row['state']=='CT'"][i-1]) # update the rows in mf_struct corresponding to i!=0 (aggregates over the grouping variables)             
+                update(row, mf_struct, ['cust', 'prod'], [['0_sum_quant'], ['1_sum_quant', '1_avg_quant'], ['2_sum_quant']][i], ["row['state']=='NY' and row['quant']<=100 ", "row['state']=='NJ'"][i-1]) # update the rows in mf_struct corresponding to i!=0 (aggregates over the grouping variables)             
 
-    output(mf_struct, ['cust', 'prod']) # check mf_struct output
     print(f"Total Rows: {len(mf_struct.keys())}")
+    output(mf_struct, ['cust', 'prod']) # check mf_struct output
+    
+    # Check if there's a predicate in G
+    if (0 == 0):
+        exit()
 
     # Apply predicate from HAVING clause
     # Iterate through rows of mf_struct
     for key, value in list(mf_struct.items()):
         # Check if current row satisfies G
-        if (value['1_sum_quant'] > 2 * value['2_sum_quant'] or value['1_avg_quant'] > value['3_avg_quant']):
-            continue
-            # d = {} # create a new dictionary
-            # # add grouping attribute name with their corresponding value to dictionary
-            # for name, key in zip(['cust', 'prod'], key):
-            #     d.update({name : key})
-            # d.update(value) # combine with dictionary of aggregates
-            # _global.append(d) # add to final list of rows
-        else:
-            del mf_struct[key]
+        if ():
+            d = {} # create a new dictionary
+            # add grouping attribute name with their corresponding value to dictionary
+            for name, key in zip(['cust', 'prod'], key):
+                d.update({name : key})
+            d.update(value) # combine with dictionary of aggregates
+            _global.append(d) # add to final list of rows
 
     print(f"Total Rows: {len(_global)}")
 
