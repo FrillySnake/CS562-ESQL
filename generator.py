@@ -256,17 +256,35 @@ def update(row: dict, struct: dict, attrs: list, aggs: list, cond: str):
 
     # Apply predicate from HAVING clause
     # Iterate through rows of mf_struct
-    for key, value in mf_struct.items():
+    for key, value in list(mf_struct.items()):
         # Check if current row satisfies G
         if ({pred_g}):
-            d = {{}} # create a new dictionary
-            # add grouping attribute name with their corresponding value to dictionary
-            for name, key in zip({phi["V"]}, key):
-                d.update({{name : key}})
-            d.update(value) # combine with dictionary of aggregates
-            _global.append(d) # add to final list of rows
+            continue
+            # d = {{}} # create a new dictionary
+            # # add grouping attribute name with their corresponding value to dictionary
+            # for name, key in zip({phi["V"]}, key):
+            #     d.update({{name : key}})
+            # d.update(value) # combine with dictionary of aggregates
+            # _global.append(d) # add to final list of rows
+        else:
+            del mf_struct[key]
 
     print(f"Total Rows: {{len(_global)}}")
+
+    # Pull out unSELECTed aggregates
+    for key1, dict in mf_struct.items():
+        for key2 in list(dict.keys()):
+            if key2 not in {phi["S"]}:
+                del dict[key2]
+
+    # Put all final entries into return data
+    for key, value in mf_struct.items():
+        d = {{}} # create a new dictionary
+        # add grouping attribute name with their corresponding value to dictionary
+        for name, key in zip({phi["V"]}, key):
+            d.update({{name : key}})
+        d.update(value) # combine with dictionary of aggregates
+        _global.append(d) # add to final list of rows
     """
     
     # body = """
