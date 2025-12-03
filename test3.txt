@@ -1,0 +1,6 @@
+SELECT ATTRIBUTE(S): cust, 0_sum_quant, 1_sum_quant, 2_sum_quant, 3_sum_quant
+NUMBER OF GROUPING VARIABLES(n): 2
+GROUPING ATTRIBUTES (V): cust, prod
+F-VECT([F]): 0_sum_quant, 1_sum_quant, 1_avg_quant, 2_sum_quant
+SELECT CONDITION-VECT([σ]): 1.state='NY' and 1.quant<=100 , 2.state='NJ'
+HAVING_CONDITION(G):
